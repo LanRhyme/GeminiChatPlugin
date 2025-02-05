@@ -4,6 +4,7 @@ GeminiChatPlugin 是一个基于 Paper 1.21 的 Minecraft 服务器插件，允�
 
 ## 特点
 >  1.通过聊天与 Gemini AI 交互
+> 
 >  2.支持预设配置，玩家可以切换不同的 AI 行为
 
 
