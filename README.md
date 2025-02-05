@@ -16,7 +16,8 @@ apiKey: "YOUR_GEMINI_API_KEY"
 ```
 
 •   proxyUrl  ：你的 Gemini API 代理 URL
-•   apiKey  ：你的 Gemini API 密钥
+
+•   apiKey  ：你的 Gemini API 密钥（在此链接获取:https://aistudio.google.com/app/apikey）
 
 ## 预设配置
 **1.创建预设文件**
