@@ -48,7 +48,7 @@ public class PresetHandler {
             try {
                 defaultPreset.createNewFile();
                 FileConfiguration config = YamlConfiguration.loadConfiguration(defaultPreset);
-                config.set("system_prompt", "户正在游玩Minecraft，请扮演一个友善的AI助手，尽可能提供有用的信息。");
+                config.set("system_prompt", "用户正在游玩Minecraft，请扮演一个友善的AI助手，尽可能提供有用的信息。");
                 config.save(defaultPreset);
             } catch (IOException e) {
                 e.printStackTrace();
