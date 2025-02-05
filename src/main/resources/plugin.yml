@@ -1,0 +1,7 @@
+name: GeminiChatPlugin
+version: '1.0-SNAPSHOT'
+main: com.LanRhyme.geminiChatPlugin.GeminiChatPlugin
+api-version: '1.21'
+load: STARTUP
+authors: [ LanRhyme ]
+description: 随便写的插件
