@@ -5,3 +5,8 @@ api-version: '1.21'
 load: STARTUP
 authors: [ LanRhyme ]
 description: 随便写的插件
+commands:
+  switchpreset:
+    description: 切换预设
+    usage: /switchpreset <预设名称>
+    permissions: gemini.switchpreset

@@ -1,0 +1,6 @@
+#反向代理地址
+#如果没有可以暂时使用:https://dynamic-halva-76bb38.netlify.app/
+proxyUrl: "http://your-reverse-proxy.com"
+#Gemini API 密钥
+#在此链接获取API key:https://aistudio.google.com/app/apikey
+apiKey: "YOUR_GEMINI_API_KEY"
