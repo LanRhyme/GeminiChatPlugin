@@ -35,6 +35,7 @@ system_prompt: "You are a friendly assistant. Answer the user's questions about 
 
 ## 使用方法
 > •玩家在聊天中输入   `#*`   开头的消息，例如  ` #*你好，Gemini！`
+> 
 > •消息内容将发送到 Gemini API，AI 的回复将显示在聊天中
 
 ## 许可证
