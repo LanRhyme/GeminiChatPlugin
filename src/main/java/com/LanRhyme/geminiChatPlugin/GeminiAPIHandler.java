@@ -5,6 +5,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -16,6 +18,7 @@ public class GeminiAPIHandler {
     private String proxyUrl;
     private String apiKey;
     private String preset;
+    private List<String> conversationHistory;  //存储对话历史记录
 
     public void setProxyUrl(String proxyUrl) {
         this.proxyUrl = proxyUrl;
@@ -25,15 +28,28 @@ public class GeminiAPIHandler {
         this.apiKey = apiKey;
     }
 
+    public void setConversationHistory(List<String> conversationHistory) {
+        this.conversationHistory = conversationHistory;
+    }
+
     public void setPreset(String preset) {
         this.preset = preset;
     }
 
     public String sendToGemini(String message) throws Exception {
+        if (conversationHistory == null) {
+            conversationHistory = new ArrayList<>();
+        }
+        conversationHistory.add(message);
+        //限制历史对话记录长度
+        if (conversationHistory.size() > 30) {
+            conversationHistory = conversationHistory.subList(conversationHistory.size() - 30, conversationHistory.size());
+        }
+
         HttpClient client = HttpClient.newHttpClient();
         String requestBody = String.format(
                 "{ \"contents\": [{ \"parts\": [{ \"text\": \"%s\" }] }] }",
-                message
+                conversationHistoryToString()
         );
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -82,5 +98,13 @@ public class GeminiAPIHandler {
             e.printStackTrace();
         }
         return "§4解析失败，请重试！"; // 如果解析失败，返回默认回复
+    }
+
+    private String conversationHistoryToString() {
+        StringBuilder sb = new StringBuilder();
+        for (String entry : conversationHistory) {
+            sb.append(entry).append("\n");
+        }
+        return sb.toString();
     }
 }

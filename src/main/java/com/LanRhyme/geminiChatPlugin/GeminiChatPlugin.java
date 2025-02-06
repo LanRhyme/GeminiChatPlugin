@@ -10,12 +10,16 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GeminiChatPlugin extends JavaPlugin implements Listener {
     private ConfigurationHandler configHandler;
     private PresetHandler presetHandler;
     private GeminiAPIHandler apiHandler;
+    private Map<Player, List<String>> conversationHistoryMap = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -34,6 +38,7 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
         // Save default config and presets
         saveDefaultConfig();
         presetHandler.saveDefaultPreset();
+        presetHandler.savemaomaoPreset();
     }
 
     @EventHandler
@@ -46,6 +51,9 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
             Player player = event.getPlayer();
             player.sendMessage(ChatColor.AQUA + "[YOU] " + ChatColor.WHITE + input);
 
+            List<String> conversationHistory = conversationHistoryMap.getOrDefault(player, new ArrayList<>());
+            apiHandler.setConversationHistory(conversationHistory);
+
             apiHandler.setProxyUrl(configHandler.getProxyUrl());
             apiHandler.setApiKey(configHandler.getApiKey());
 
@@ -53,6 +61,11 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
                 try {
                     String reply = apiHandler.sendToGemini(input);
                     event.getPlayer().sendMessage(ChatColor.GOLD + "[◇] " + ChatColor.WHITE + reply);
+
+                    //将 AI 的回复添加到对话历史记录
+                    conversationHistory.add(input);
+                    conversationHistory.add(reply);
+                    conversationHistoryMap.put(player, conversationHistory);
                 } catch (Exception e) {
                     event.getPlayer().sendMessage(ChatColor.RED + "Error: " + e.getMessage());
                     e.printStackTrace();
@@ -82,6 +95,8 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
                 String presetName = args[0];
                 if (presetHandler.switchPreset(presetName)) {
                     player.sendMessage(ChatColor.GREEN + "预设已切换为: " + presetName);
+                    //重置历史对话记录
+                    conversationHistoryMap.put(player, new ArrayList<>());
                 } else {
                     player.sendMessage(ChatColor.RED + "预设文件不存在，请检查预设名称" );
                 }
