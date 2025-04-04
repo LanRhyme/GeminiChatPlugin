@@ -10,3 +10,6 @@ commands:
     description: 切换预设
     usage: /switchpreset <预设名称>
     permissions: gemini.switchpreset
+  presetmenu:
+    description: 打开预设选择菜单
+    usage: /presetmenu

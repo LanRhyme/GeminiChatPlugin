@@ -2,17 +2,24 @@ package com.LanRhyme.geminiChatPlugin;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
+import java.io.File;
+import java.util.*;
+import java.util.Arrays;
 import java.util.List;
 
 public class GeminiChatPlugin extends JavaPlugin implements Listener {
@@ -102,6 +109,40 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
         conversationHistoryMap.put(player, new ArrayList<>());
     }
 
+    // 新增事件处理：GUI点击
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        Player player = (Player) event.getWhoClicked();
+        Inventory clickedInventory = event.getClickedInventory();
+        ItemStack clickedItem = event.getCurrentItem();
+
+        if (clickedInventory != null
+                && clickedItem != null) {
+
+            event.setCancelled(true); // 防止误操作
+
+            if (clickedItem.getType() == Material.PAPER) {
+                String presetName = ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName());
+
+                if ("返回".equals(presetName)) {
+                    player.closeInventory();
+                    return;
+                }
+
+                // 执行预设切换
+                if (presetHandler.switchPreset(presetName)) {
+                    player.sendMessage(ChatColor.GREEN + "已切换至预设: " + presetName);
+                    resetPlayerHistory(player); // 清空对话历史
+                } else {
+                    player.sendMessage(ChatColor.RED + "预设不存在！");
+                }
+            }
+        }
+    }
+    // 新增公共访问方法
+    public PresetHandler getPresetHandler() {
+        return presetHandler;
+    }
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player)) {
@@ -130,13 +171,64 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
             }
 
             // 关键：切换后同步到API Handler
-            apiHandler.setPreset(presetName);
             conversationHistoryMap.put(player, new ArrayList<>());// 切换预设时清空对话历史
             player.sendMessage(ChatColor.GREEN + "已切换至预设: " + presetName);
             conversationHistoryMap.put(player, new ArrayList<>());
             return true;
+        } else if (cmd.getName().equalsIgnoreCase("presetmenu")) {
+            if (!player.isOp()) {
+                player.sendMessage(ChatColor.RED + "你没有权限使用此命令");
+                return true;
+            }
+
+            openPresetSelectionGUI(player);
+            return true;
         }
         return false;
+    }
+
+    private void openPresetSelectionGUI(Player player) {
+        String title = ChatColor.BLUE + "预设选择菜单";
+        PresetSelectorGUI gui = new PresetSelectorGUI(this, title); // 传递插件实例
+        Inventory inventory = gui.getInventory(); // 获取Inventory对象
+        gui.open(player);
+        // 加载所有预设
+        List<String> presets = presetHandler.getPresets();
+        presets.add(0, "返回"); // 添加返回按钮
+
+        for (int i = 0; i < presets.size(); i++) {
+            String presetName = presets.get(i);
+            ItemStack item = createPresetItem(presetName);
+            inventory.setItem(i, item);
+        }
+
+        player.openInventory(inventory);
+    }
+
+    // 新增方法：创建预设展示物品
+    private ItemStack createPresetItem(String presetName) {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta meta = item.getItemMeta();
+
+        meta.setDisplayName(ChatColor.YELLOW + presetName);
+
+        // 获取系统提示作为物品描述
+        String systemPrompt = getPresetSystemPrompt(presetName);
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.GRAY + "系统提示：");
+        lore.addAll(Arrays.asList(systemPrompt.split("\n"))); // 支持多行描述
+        meta.setLore(lore);
+
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    // 新增方法：获取预设的系统提示
+    private String getPresetSystemPrompt(String presetName) {
+        FileConfiguration config = YamlConfiguration.loadConfiguration(
+                new File(getDataFolder(), "presets/" + presetName + ".yml")
+        );
+        return config.getString("system_prompt", "无描述");
     }
 }
 

@@ -22,6 +22,24 @@ public class PresetHandler {
         this.plugin = plugin;
     }
 
+    // 新增方法：获取所有预设名称
+    public List<String> getPresets() {
+        return new ArrayList<>(presets);
+    }
+
+
+    // 新增方法：获取当前操作玩家名称（需传参实现）
+    private String getPlayerName() {
+        // 这里需要根据实际情况获取玩家名称
+        // 示例代码需要结合你的权限系统实现
+        return "玩家名称";
+    }
+
+    // 新增方法：检查预设是否存在
+    private boolean presetExists(String presetName) {
+        return presets.contains(presetName);
+    }
+
     public void loadPresets() {
         Path presetsFolder = Path.of(plugin.getDataFolder().toString(), "presets");
         if (!Files.exists(presetsFolder)) {
@@ -68,6 +86,11 @@ public class PresetHandler {
         if (Files.exists(presetFile)) {
             currentPreset = presetName;
             saveCurrentPreset();
+            plugin.getLogger().info("玩家 " + getPlayerName() + " 切换至预设: " + presetName);
+            Player player = Bukkit.getPlayerExact(getPlayerName());
+            if (player != null) {
+                plugin.resetPlayerHistory(player); // 修正为仅清空当前玩家
+            }
             return true;
         } else {
             return false;
@@ -96,6 +119,11 @@ public class PresetHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    // 创建文件时增加父目录检查
+    private void createFileSafely(Path file) throws IOException {
+        Files.createDirectories(file.getParent());
+        Files.createFile(file);
     }
     public void saveDefaultPreset() {
         Path presetsFolder = Path.of(plugin.getDataFolder().toString(), "presets");

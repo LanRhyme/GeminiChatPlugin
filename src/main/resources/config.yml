@@ -4,3 +4,10 @@ proxyUrl: "http://your-reverse-proxy.com"
 #Gemini API 密钥
 #在此链接获取API key:https://aistudio.google.com/app/apikey
 apiKey: "YOUR_GEMINI_API_KEY"
+
+
+# GUI设置（可选）
+gui-settings:
+  rows: 3
+  background-item: GRAY_STAINED_GLASS_PANE
+  border-color: BLACK
