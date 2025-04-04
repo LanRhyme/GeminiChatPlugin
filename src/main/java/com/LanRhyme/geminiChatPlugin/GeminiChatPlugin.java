@@ -19,39 +19,56 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
     private ConfigurationHandler configHandler;
     private PresetHandler presetHandler;
     private GeminiAPIHandler apiHandler;
-    private Map<Player, List<String>> conversationHistoryMap = new HashMap<>();
+    public Map<Player, List<String>> conversationHistoryMap = new HashMap<>();
 
     @Override
     public void onEnable() {
         // Initialize handlers
         configHandler = new ConfigurationHandler(this);
         presetHandler = new PresetHandler(this);
-        apiHandler = new GeminiAPIHandler();
+        apiHandler = new GeminiAPIHandler(this, presetHandler); // 注入依赖
 
         // Load configurations and presets on plugin startup
         configHandler.loadConfig();
         presetHandler.loadPresets();
-
+        presetHandler.saveDefaultPreset();
+        presetHandler.savemaomaoPreset();
         // Register event listeners
         Bukkit.getPluginManager().registerEvents(this, this);
 
         // Save default config and presets
         saveDefaultConfig();
-        presetHandler.saveDefaultPreset();
-        presetHandler.savemaomaoPreset();
     }
 
     @EventHandler
     public void onPlayerChat(AsyncPlayerChatEvent event) {
+        Player player = event.getPlayer();
         String message = event.getMessage();
-        if (message.startsWith("#*")) {
-            event.setCancelled(true);
-            String input = message.substring(2).trim();
 
-            Player player = event.getPlayer();
+        apiHandler.setPreset(presetHandler.getCurrentPreset());
+
+        if (message.startsWith("#*")) {
+            // 获取当前玩家选中的preset
+            String selectedPreset = presetHandler.getCurrentPreset();
+            String input = message.substring(2).trim();
+            apiHandler.setPreset(selectedPreset); // 关键修改：同步当前preset
+            // 更新玩家的对话历史
+            event.setCancelled(true);
+            List<String> conversationHistory = conversationHistoryMap.getOrDefault(player, new ArrayList<>());
+            Bukkit.getScheduler().runTask(this, () -> {
+                conversationHistoryMap.put(player, conversationHistory);
+            });
+            apiHandler.setConversationHistory(conversationHistory);
+
+            apiHandler.setProxyUrl(configHandler.getProxyUrl());
+            apiHandler.setApiKey(configHandler.getApiKey());
+
             player.sendMessage(ChatColor.AQUA + "[YOU] " + ChatColor.WHITE + input);
 
-            List<String> conversationHistory = conversationHistoryMap.getOrDefault(player, new ArrayList<>());
+            // 保存历史记录到Map（异步操作需同步到主线程）
+            Bukkit.getScheduler().runTask(this, () -> {
+                conversationHistoryMap.put(player, conversationHistory);
+            });
             apiHandler.setConversationHistory(conversationHistory);
 
             apiHandler.setProxyUrl(configHandler.getProxyUrl());
@@ -60,12 +77,15 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
             Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
                 try {
                     String reply = apiHandler.sendToGemini(input);
-                    event.getPlayer().sendMessage(ChatColor.GOLD + "[◇] " + ChatColor.WHITE + reply);
+                    Bukkit.getScheduler().runTask(this, () -> {
+                        player.sendMessage(ChatColor.GOLD + "[◇] " + ChatColor.WHITE + reply);
+                    });
 
-                    //将 AI 的回复添加到对话历史记录
-                    conversationHistory.add(input);
-                    conversationHistory.add(reply);
-                    conversationHistoryMap.put(player, conversationHistory);
+                    // 重新获取 conversationHistory 并更新
+                    List<String> updatedHistory = conversationHistoryMap.getOrDefault(player, new ArrayList<>());
+                    updatedHistory.add(input);
+                    updatedHistory.add(reply);
+                    conversationHistoryMap.put(player, updatedHistory);
                 } catch (Exception e) {
                     event.getPlayer().sendMessage(ChatColor.RED + "Error: " + e.getMessage());
                     e.printStackTrace();
@@ -74,6 +94,13 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    public Map<Player, List<String>> getPlayerConversationHistoryMap() {
+        return conversationHistoryMap;
+    }
+
+    public void resetPlayerHistory(Player player) {
+        conversationHistoryMap.put(player, new ArrayList<>());
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -91,22 +118,25 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
         }
 
         if (cmd.getName().equalsIgnoreCase("switchPreset")) {
-            if (args.length == 1) {
-                String presetName = args[0];
-                if (presetHandler.switchPreset(presetName)) {
-                    player.sendMessage(ChatColor.GREEN + "预设已切换为: " + presetName);
-                    //重置历史对话记录
-                    conversationHistoryMap.put(player, new ArrayList<>());
-                } else {
-                    player.sendMessage(ChatColor.RED + "预设文件不存在，请检查预设名称" );
-                }
-                return true;
-            } else {
+            if (args.length != 1) {
                 player.sendMessage(ChatColor.RED + "用法: /switchPreset <preset_name>");
                 return true;
             }
+
+            String presetName = args[0];
+            if (!presetHandler.switchPreset(presetName)) {
+                player.sendMessage(ChatColor.RED + "预设不存在！");
+                return true;
+            }
+
+            // 关键：切换后同步到API Handler
+            apiHandler.setPreset(presetName);
+            conversationHistoryMap.put(player, new ArrayList<>());// 切换预设时清空对话历史
+            player.sendMessage(ChatColor.GREEN + "已切换至预设: " + presetName);
+            conversationHistoryMap.put(player, new ArrayList<>());
+            return true;
         }
         return false;
     }
-
 }
+

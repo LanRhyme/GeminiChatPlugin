@@ -2,6 +2,8 @@ package com.LanRhyme.geminiChatPlugin;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -58,6 +60,11 @@ public class PresetHandler {
         Path presetsFolder = Path.of(plugin.getDataFolder().toString(), "presets");
         Path presetFile = Path.of(presetsFolder.toString(), presetName + ".yml");
 
+        if (presetName == null || presetName.isEmpty()) {
+            System.err.println("尝试切换到空预设名称");
+            return false;
+        }
+
         if (Files.exists(presetFile)) {
             currentPreset = presetName;
             saveCurrentPreset();
@@ -65,6 +72,16 @@ public class PresetHandler {
         } else {
             return false;
         }
+    }
+
+    public void resetPlayerConversationHistory(Player player) {
+        this.plugin.conversationHistoryMap.put(player, new ArrayList<>()); // 通过 plugin 访问
+        Bukkit.getLogger().info("Reset conversation history for " + player.getName());
+    }
+
+    public void reloadPresets(Player player) {
+        loadPresets();
+        this.plugin.getPlayerConversationHistoryMap().clear(); // 通过 plugin 访问
     }
 
     public String getCurrentPreset() {

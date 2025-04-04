@@ -22,8 +22,12 @@ public class ConfigurationHandler {
         }
 
         FileConfiguration config = plugin.getConfig();
-        proxyUrl = config.getString("proxyUrl", "http://default-proxy.com");
-        apiKey = config.getString("apiKey", "DEFAULT_API_KEY");
+        proxyUrl = config.getString("proxyUrl", "");
+        apiKey = config.getString("apiKey", "");
+
+        if (proxyUrl == null || proxyUrl.isEmpty() || apiKey == null || apiKey.isEmpty()) {
+            throw new IllegalStateException("Proxy URL或API Key未配置");
+        }
     }
 
     public String getProxyUrl() {
