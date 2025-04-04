@@ -1,5 +1,6 @@
 package com.LanRhyme.geminiChatPlugin;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 
 
@@ -25,7 +26,10 @@ public class ConfigurationHandler {
         proxyUrl = config.getString("proxyUrl", "");
         apiKey = config.getString("apiKey", "");
 
-        if (proxyUrl == null || proxyUrl.isEmpty() || apiKey == null || apiKey.isEmpty()) {
+        // 添加日志验证
+        Bukkit.getLogger().info("Proxy URL: " + proxyUrl);
+        Bukkit.getLogger().info("API Key: " + apiKey);
+        if (proxyUrl.isEmpty() || apiKey.isEmpty()) {
             throw new IllegalStateException("Proxy URL或API Key未配置");
         }
     }

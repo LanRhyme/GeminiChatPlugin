@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -98,13 +99,19 @@ public class PresetHandler {
     }
 
     public void resetPlayerConversationHistory(Player player) {
-        this.plugin.conversationHistoryMap.put(player, new ArrayList<>()); // 通过 plugin 访问
-        Bukkit.getLogger().info("Reset conversation history for " + player.getName());
+        plugin.conversationHistoryMap.put(player, new ArrayList<>()); // 直接覆盖
     }
 
     public void reloadPresets(Player player) {
         loadPresets();
         this.plugin.getPlayerConversationHistoryMap().clear(); // 通过 plugin 访问
+    }
+
+    public String getSystemPrompt(String presetName) {
+        FileConfiguration config = YamlConfiguration.loadConfiguration(
+                new File(plugin.getDataFolder(), "presets/" + presetName + ".yml")
+        );
+        return config.getString("system_prompt", "默认系统提示");
     }
 
     public String getCurrentPreset() {
