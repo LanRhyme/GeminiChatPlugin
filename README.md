@@ -36,8 +36,8 @@ system_prompt: "You are a friendly assistant. Answer the user's questions about 
 
 **3.切换预设**
 
-• OP 玩家可以使用   `/switchPreset <preset_name>`   命令切换预设
-• 使用命令`/presetmenu`可以打开预设菜单查看预设的详细信息并进行切换
+-OP 玩家可以使用   `/switchPreset <preset_name>`   命令切换预设
+-使用命令`/presetmenu`可以打开预设菜单查看预设的详细信息并进行切换
 
 
 
