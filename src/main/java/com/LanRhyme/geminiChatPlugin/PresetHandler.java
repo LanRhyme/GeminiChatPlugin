@@ -20,7 +20,9 @@ public class PresetHandler {
     private List<String> presets = new ArrayList<>();
 
     public PresetHandler(GeminiChatPlugin plugin) {
+
         this.plugin = plugin;
+        loadPresets(); // 移动到构造函数
     }
 
     // 新增方法：获取所有预设名称
@@ -55,7 +57,9 @@ public class PresetHandler {
             Files.list(presetsFolder).forEach(path -> {
                 if (path.toFile().isFile() && path.toString().endsWith(".yml")) {
                     String presetName = path.getFileName().toString().replace(".yml", "");
-                    presets.add(presetName);
+                    if (!presets.contains(presetName)) { // 去重
+                        presets.add(presetName);
+                    }
                 }
             });
 

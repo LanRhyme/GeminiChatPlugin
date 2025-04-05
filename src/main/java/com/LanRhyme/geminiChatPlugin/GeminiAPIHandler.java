@@ -166,7 +166,7 @@ public class GeminiAPIHandler {
             return result.get("content").getAsJsonObject().get("parts").getAsJsonArray().get(0).getAsJsonObject().get("text").getAsString();
         } catch (IOException | InterruptedException e) {
             Bukkit.getLogger().severe("API 请求失败: " + e.getMessage());
-            return "抱歉，当前无法处理请求。"; // 返回兜底回复
+            return "请求超时或网络异常，请稍后重试"; // 返回兜底回复
         }
     }
 }

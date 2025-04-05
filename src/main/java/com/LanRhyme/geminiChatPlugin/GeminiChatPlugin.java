@@ -13,6 +13,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -27,6 +28,7 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
     private ConfigurationHandler configHandler;
     private PresetHandler presetHandler;
     private GeminiAPIHandler apiHandler;
+    private static final String PRESET_MENU_TITLE = ChatColor.BLUE + "预设选择菜单";
     public Map<Player, List<String>> conversationHistoryMap = new ConcurrentHashMap<>();
 
 
@@ -103,6 +105,7 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
         conversationHistoryMap.put(player, new ArrayList<>());
     }
 
+
     // 新增事件处理：GUI点击
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
@@ -110,9 +113,7 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
         Inventory clickedInventory = event.getClickedInventory();
         ItemStack clickedItem = event.getCurrentItem();
 
-        if (clickedInventory != null
-                && clickedItem != null) {
-
+        if (isPresetMenuOpen(player, clickedInventory)) {
             event.setCancelled(true); // 防止误操作
 
             if (clickedItem.getType() == Material.PAPER) {
@@ -133,6 +134,17 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
             }
         }
     }
+
+    private boolean isPresetMenuOpen(Player player, Inventory inventory) {
+        if (inventory == null || !(inventory.getHolder() instanceof PresetSelectorGUI)) {
+            return false;
+        }
+
+        // 直接通过InventoryHolder获取标题
+        InventoryView openInventory = player.getOpenInventory();
+        return true;
+    }
+
     // 新增公共访问方法
     public PresetHandler getPresetHandler() {
         return presetHandler;
@@ -181,21 +193,20 @@ public class GeminiChatPlugin extends JavaPlugin implements Listener {
     }
 
     private void openPresetSelectionGUI(Player player) {
-        String title = ChatColor.BLUE + "预设选择菜单";
-        PresetSelectorGUI gui = new PresetSelectorGUI(this, title); // 传递插件实例
-        Inventory inventory = gui.getInventory(); // 获取Inventory对象
-        gui.open(player);
-        // 加载所有预设
+        PresetHandler presetHandler = this.getPresetHandler();
         List<String> presets = presetHandler.getPresets();
-        presets.add(0, "返回"); // 添加返回按钮
 
-        for (int i = 0; i < presets.size(); i++) {
-            String presetName = presets.get(i);
-            ItemStack item = createPresetItem(presetName);
-            inventory.setItem(i, item);
+        if (presets.isEmpty()) {
+            player.sendMessage(ChatColor.RED + "没有可用的预设！");
+            return;
         }
 
-        player.openInventory(inventory);
+        PresetSelectorGUI gui = PresetSelectorGUI.createDynamic(
+                this,
+                ChatColor.BLUE + "预设选择菜单",
+                presets
+        );
+        gui.open(player);
     }
 
     // 新增方法：创建预设展示物品
